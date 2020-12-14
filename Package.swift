@@ -21,8 +21,5 @@ let package = Package(
         .target(
             name: "SwiftLambdaTwist",
             dependencies: []),
-        .testTarget(
-            name: "SwiftLambdaTwistTests",
-            dependencies: ["SwiftLambdaTwist"]),
     ]
 )

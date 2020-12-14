@@ -29,7 +29,7 @@ extension simd_float3 {
 // ref: https://github.com/midjji/lambdatwist-p3p
 // ref: https://github.com/vlarsson/lambdatwist
 // ref: https://openaccess.thecvf.com/content_ECCV_2018/papers/Mikael_Persson_Lambda_Twist_An_ECCV_2018_paper.pdf
-func lambdaTwist(Xs: [simd_float3], Ys: [simd_float3]) -> [(simd_float3x3, simd_float3)] {
+public func lambdaTwist(Xs: [simd_float3], Ys: [simd_float3]) -> [(simd_float3x3, simd_float3)] {
     var ret: [(simd_float3x3, simd_float3)] = []
     
     // 3: Normalize yi = yi/|yi|
