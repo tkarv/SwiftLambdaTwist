@@ -87,20 +87,12 @@ public func lambdaTwist(Xs: [simd_float3], Ys: [simd_float3]) -> [(simd_float3x3
     // get coefficients c3, c2, c1, c0
     //let c3 = D2.determinant
     //let c0 = D1.determinant
-    /*
-    double c3 = D2.col(0).dot(DX2.col(0));
-    double c2 = (D1.array() * DX2.array()).sum();
-    double c1 = (D2.array() * DX1.array()).sum();
-    double c0 = D1.col(0).dot(DX1.col(0));
-    */
+
     let c3 = D2.columns.0.dot(other: DX2.columns.0)
     let c2 = D1.coeffMul(other: DX2).sum()
     let c1 = D2.coeffMul(other: DX1).sum()
     let c0 = D1.columns.0.dot(other: DX1.columns.0)
     
-//    let c2 = simd_mul(D1, DX2).sum()
-//    let c1 = simd_mul(D2, DX1).sum()
-
     // NOTE: c1 and c2 are switched in the paper
     // c1 = dT21(d12 ×d13) + dT22(d13 ×d11) + dT23(d11 ×d12)
 //    let c1 =
@@ -118,11 +110,8 @@ public func lambdaTwist(Xs: [simd_float3], Ys: [simd_float3]) -> [(simd_float3x3
     let B = Double(c1 / c3)
     let C = Double(c0 / c3)
     
-    let a = B - A*A/3.0;
-    let b = (2.0*A*A*A - 9.0*A*B)/27.0 + C;
-    let c = b*b/4.0 + a*a*a/27.0;
-
-    let cubicRoot = solveOneCubic(a: a, b: b, c: c)
+    // let cubicRoot = solveOneCubic(a: a, b: b, c: c)
+    let cubicRoot = solveCubicFromPaper(A: A, B: B, C: C)
     
     // 7: D0 = D1 + γD2
     let D0 = D1 + simd_float1(cubicRoot) * D2
@@ -298,6 +287,28 @@ func solveOneCubic(a: Double, b: Double, c: Double) -> Double {
     //let S = pow(-R + sqrt(M), 1.0/3.0)
     //let T = pow(-R - sqrt(M), 1.0/3.0)
     return S + T - a / 3.0
+}
+
+// ref: https://github.com/vlarsson/lambdatwist
+func solveCubicFromPaper(A: Double, B: Double, C: Double) -> Double {
+    var a = B - A*A/3.0
+    var b = (2.0*A*A*A - 9.0*A*B)/27.0 + C
+    var c = b*b/4.0 + a*a*a/27.0
+    var gamma = 0.0
+    
+    if c > 0 {
+        c = sqrt(c)
+        b *= -0.5
+        gamma = cbrt(b + c) + cbrt(b - c) - A / 3.0;
+    } else {
+        c = 3.0*b/(2.0*a) * sqrt(-3.0/a);
+        gamma = 2.0 * sqrt(-a/3.0) * cos(acos(c)/3.0) - A / 3.0;
+    }
+
+    let f = gamma*gamma*gamma + A * gamma*gamma + B * gamma + C;
+    let df = 3.0 * gamma * gamma + 2.0 * A * gamma + B;
+    gamma = gamma - f / df;
+    return gamma
 }
 
 func solveQuadratic(a: Double, b: Double, c: Double) -> [Double] {
