@@ -118,7 +118,11 @@ public func lambdaTwist(Xs: [simd_float3], Ys: [simd_float3]) -> [(simd_float3x3
     let B = Double(c1 / c3)
     let C = Double(c0 / c3)
     
-    let cubicRoot = solveOneCubic(a: A, b: B, c: C)
+    let a = B - A*A/3.0;
+    let b = (2.0*A*A*A - 9.0*A*B)/27.0 + C;
+    let c = b*b/4.0 + a*a*a/27.0;
+
+    let cubicRoot = solveOneCubic(a: a, b: b, c: c)
     
     // 7: D0 = D1 + γD2
     let D0 = D1 + simd_float1(cubicRoot) * D2
