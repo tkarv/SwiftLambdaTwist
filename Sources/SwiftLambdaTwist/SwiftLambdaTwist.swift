@@ -7,6 +7,18 @@
 import Foundation
 import simd
 
+extension simd_float3x3 {
+    func coeffMul(other: simd_float3x3) -> simd_float3x3 {
+        return simd_float3x3(columns: (
+                                simd_float3(self[0,0] * other[0,0], self[0,1] * other[0,1], self[0,2] * other[0,2])
+                                , simd_float3(self[1,0] * other[1,0], self[1,1] * other[1,1], self[1,2] * other[1,2])
+                                , simd_float3(self[2,0] * other[2,0], self[2,1] * other[2,1], self[2,2] * other[2,2]))
+        )
+    }
+    func sum() -> simd_float1 {
+        return self[0,0] + self[0,1] + self[0,2] + self[1,0] + self[1,1] + self[1,2] + self[2,0] + self[2,1] + self[2,2]
+    }
+}
 extension simd_float3 {
     func norm() -> simd_float1 {
         return sqrt(self.squaredNorm())
@@ -61,23 +73,46 @@ public func lambdaTwist(Xs: [simd_float3], Ys: [simd_float3]) -> [(simd_float3x3
     let D2 = M13 * a23 - M23 * a13
     
     // 6: Compute a real root γ to (8)-(10) of the cubic equation
+    /*
+     
+     Eigen::Matrix3d DX1, DX2;
+     DX1 << D1.col(1).cross(D1.col(2)), D1.col(2).cross(D1.col(0)), D1.col(0).cross(D1.col(1));
+     DX2 << D2.col(1).cross(D2.col(2)), D2.col(2).cross(D2.col(0)), D2.col(0).cross(D2.col(1));
+
+     */
+    
+    let DX1 = simd_float3x3(columns: (D1.columns.1.cross(other: D1.columns.2), D1.columns.2.cross(other: D1.columns.0), D1.columns.0.cross(other: D1.columns.1)))
+    let DX2 = simd_float3x3(columns: (D2.columns.1.cross(other: D2.columns.2), D2.columns.2.cross(other: D2.columns.0), D2.columns.0.cross(other: D2.columns.1)))
     
     // get coefficients c3, c2, c1, c0
-    let c3 = D2.determinant
-    let c0 = D1.determinant
+    //let c3 = D2.determinant
+    //let c0 = D1.determinant
+    /*
+    double c3 = D2.col(0).dot(DX2.col(0));
+    double c2 = (D1.array() * DX2.array()).sum();
+    double c1 = (D2.array() * DX1.array()).sum();
+    double c0 = D1.col(0).dot(DX1.col(0));
+    */
+    let c3 = D2.columns.0.dot(other: DX2.columns.0)
+    let c2 = D1.coeffMul(other: DX2).sum()
+    let c1 = D2.coeffMul(other: DX1).sum()
+    let c0 = D1.columns.0.dot(other: DX1.columns.0)
     
+//    let c2 = simd_mul(D1, DX2).sum()
+//    let c1 = simd_mul(D2, DX1).sum()
+
     // NOTE: c1 and c2 are switched in the paper
     // c1 = dT21(d12 ×d13) + dT22(d13 ×d11) + dT23(d11 ×d12)
-    let c1 =
-        D2.columns.0.dot(other: D1.columns.1.cross(other: D1.columns.2)) +
-        D2.columns.1.dot(other: D1.columns.2.cross(other: D1.columns.0)) +
-        D2.columns.2.dot(other: D1.columns.0.cross(other: D1.columns.1))
+//    let c1 =
+//        D2.columns.0.dot(other: D1.columns.1.cross(other: D1.columns.2)) +
+//        D2.columns.1.dot(other: D1.columns.2.cross(other: D1.columns.0)) +
+//        D2.columns.2.dot(other: D1.columns.0.cross(other: D1.columns.1))
     
     // c2 = dT11(d22 ×d23) + dT12(d23 ×d21) + dT13(d21 ×d22)
-    let c2 =
-        D1.columns.0.dot(other: D2.columns.1.cross(other: D2.columns.2)) +
-        D1.columns.1.dot(other: D2.columns.2.cross(other: D2.columns.0)) +
-        D1.columns.2.dot(other: D2.columns.0.cross(other: D2.columns.1))
+//    let c2 =
+//        D1.columns.0.dot(other: D2.columns.1.cross(other: D2.columns.2)) +
+//        D1.columns.1.dot(other: D2.columns.2.cross(other: D2.columns.0)) +
+//        D1.columns.2.dot(other: D2.columns.0.cross(other: D2.columns.1))
     
     let A = Double(c2 / c3)
     let B = Double(c1 / c3)
